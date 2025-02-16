@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movimiento Parabólico</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+            display: block;
+            margin: auto;
+        }
+        .controls {
+            text-align: center;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas" width="800" height="600"></canvas>
+    <div class="controls">
+        <label for="angle">Ángulo (°):</label>
+        <input type="number" id="angle" value="45" min="0" max="90">
+        <label for="speed">Velocidad (m/s):</label>
+        <input type="number" id="speed" value="16.25" min="1">
+        <button onclick="resetExperiment()">Reiniciar Experimento</button>
+        <button onclick="pauseExperiment()">Pausar</button>
+        <button onclick="resumeExperiment()">Continuar</button>
+    </div>
+    <script>
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+
+        const GRAVITY = 9.8;
+        let projectile, animationFrame, isPaused = false, trajectory = [];
+
+        function initializeProjectile() {
+            const speed = parseFloat(document.getElementById("speed").value);
+            const angle = parseFloat(document.getElementById("angle").value) * (Math.PI / 180);
+
+            projectile = {
+                x: 50,
+                y: canvas.height - 50,
+                radius: 10,
+                velocityX: speed * Math.cos(angle),
+                velocityY: -5 * speed * Math.sin(angle),
+                time: 0
+            };
+            trajectory = [];
+        }
+
+        function drawProjectile() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Dibuja la trayectoria
+            ctx.beginPath();
+            ctx.strokeStyle = "lightblue";
+            ctx.lineWidth = 2;
+            for (let i = 0; i < trajectory.length; i++) {
+                ctx.lineTo(trajectory[i].x, trajectory[i].y);
+            }
+            ctx.stroke();
+            ctx.closePath();
+
+            // Dibuja el proyectil principal
+            ctx.beginPath();
+            ctx.arc(projectile.x, projectile.y, projectile.radius, 0, Math.PI * 2);
+            ctx.fillStyle = "red";
+            ctx.fill();
+            ctx.closePath();
+
+            // Dibuja la sombra horizontal
+            ctx.beginPath();
+            ctx.arc(projectile.x, canvas.height - 50, projectile.radius, 0, Math.PI * 2);
+            ctx.fillStyle = "gray";
+            ctx.fill();
+            ctx.closePath();
+
+            // Dibuja el reflejo vertical
+            ctx.beginPath();
+            ctx.arc(750, projectile.y, projectile.radius, 0, Math.PI * 2);
+            ctx.fillStyle = "blue";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function updateProjectile(dt) {
+            if (isPaused) return;
+
+            projectile.time += dt;
+            projectile.x = 50 + projectile.velocityX * projectile.time;
+            projectile.y = canvas.height - 50 + projectile.velocityY * projectile.time + 0.5 * GRAVITY * Math.pow(projectile.time, 2);
+            
+            trajectory.push({ x: projectile.x, y: projectile.y });
+            
+            if (projectile.y >= canvas.height - 50) {
+                cancelAnimationFrame(animationFrame);
+                projectile.y = canvas.height - 50;
+            }
+        }
+
+        function animate() {
+            updateProjectile(0.016);
+            drawProjectile();
+            animationFrame = requestAnimationFrame(animate);
+        }
+
+        function resetExperiment() {
+            cancelAnimationFrame(animationFrame);
+            initializeProjectile();
+            isPaused = false;
+            animate();
+        }
+
+        function pauseExperiment() {
+            isPaused = true;
+            cancelAnimationFrame(animationFrame);
+        }
+
+        function resumeExperiment() {
+            if (isPaused) {
+                isPaused = false;
+                animate();
+            }
+        }
+
+        initializeProjectile();
+        animate();
+    </script>
+</body>
+</html>
